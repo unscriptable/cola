@@ -3,6 +3,8 @@
 define(function () {
 
 	var containsImpl = getContainsImpl;
+	var addEventImpl = getAddEventImpl;
+	var removeEventImpl = function () {};
 
 	var formTypes = { 'INPUT': 1, 'SELECT': 1, 'TEXTAREA': 1 };
 	var formClickables = { 'CHECKBOX': 1, 'RADIO': 1 };
@@ -41,7 +43,13 @@ define(function () {
 			return node.querySelectorAll(selector);
 		},
 
-		guessProp: guessPropFor
+		addEvent: addEventImpl,
+
+		removeEvent: removeEventImpl,
+
+		guessProp: guessPropFor,
+
+		guessEvent: guessEventFor
 
 	};
 
@@ -69,6 +77,28 @@ define(function () {
 		return containsImpl.apply(null, arguments);
 	}
 
+	function getAddEventImpl () {
+		if (typeof document != 'undefined' && document.addEventListener) {
+			// modern browser
+			addEventImpl = function (node, name, listener, capture) {
+				return node.addEventListener(name, listener, capture);
+			};
+			removeEventImpl = function (node, name, listener, capture) {
+				return node.removeEventListener(name, listener, capture);
+			};
+		}
+		else {
+			// assume legacy IE
+			addEventImpl = function (node, name, listener, capture) {
+				return node.attachEvent('on' + name, listener);
+			};
+			removeEventImpl = function (node, name, listener, capture) {
+				return node.detachEvent('on' + name, listener);
+			};
+		}
+		return addEventImpl.apply(null, arguments);
+	}
+
 	function isFormValueNode (node) {
 		return node.nodeName && node.nodeName.toUpperCase() in formTypes;
 	}
@@ -78,10 +108,22 @@ define(function () {
 			&& node.type && node.type.toUpperCase() in formClickables;
 	}
 
+	function isContentEditable (node) {
+		return node.isContentEditable && node.isContentEditable();
+	}
+
 	function guessPropFor (node) {
 		return isFormValueNode(node)
-			? isClickableFormNode(node) ? 'checked' : 'value'
-			: 'textContent';
+			? (isClickableFormNode(node) ? 'checked' : 'value')
+			: (isContentEditable(node) ? 'innerHTML' : 'textContent');
+	}
+
+	function guessEventFor (node) {
+		return isFormValueNode(node)
+			// IE needs click
+			? (isClickableFormNode(node) ? 'click' : 'change')
+			// "change" doesn't fire for contentEditable elements :(
+			: (isContentEditable(node) ? 'blur' : '');
 	}
 
 });
