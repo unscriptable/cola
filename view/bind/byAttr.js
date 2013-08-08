@@ -37,10 +37,10 @@ define(function (require) {
 
 			return {
 				push: function (provider) {
-					for (var i = 0; i < setters.length; i++) setters[i](provider);
+					setters.forEach(function (setter) { setter(provider) });
 				},
 				pull: function (receiver) {
-					for (var i = 0; i < getters.length; i++) getters[i](receiver);
+					getters.forEach(function (getter) { getter(receiver); });
 				}
 			};
 		}
