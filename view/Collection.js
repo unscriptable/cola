@@ -131,9 +131,6 @@ define(function (require) {
 
 				}, this);
 			},
-			observe: function (callback) {
-
-			},
 			find: function (nodeOrEvent) {
 				var binding = find(nodeOrEvent);
 				return binding && binding.model;

@@ -53,9 +53,6 @@ define(function (require) {
 				}
 				return binding.model;
 			},
-			observe: function (callback) {
-
-			},
 			find: function (nodeOrEvent) {
 				if (contains(binding.node, nodeOrEvent)) return binding.model;
 			},
