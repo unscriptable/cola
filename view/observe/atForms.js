@@ -8,7 +8,7 @@ define(function (require) {
 
 		options = Object.create(options);
 
-		if (!options.events) options.events = [ 'submit:form' ];
+		if (!options.events) options.events = [ 'submit:form', 'submit' ];
 
 		return atRoot(view, options);
 	}
