@@ -2,8 +2,6 @@
 (function (define) {
 define(function (require) {
 
-	var dom = require('../lib/dom');
-
 	function atRoot (view, options) {
 		var on, eventSelectors, observations;
 
