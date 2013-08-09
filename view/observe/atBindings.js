@@ -4,12 +4,16 @@ define(function (require) {
 
 	var dom = require('../lib/dom');
 
+	/***** DO NOT USE *****/
+	// TODO: this cannot work since the bindings are never exposed from the
+	// binder and therefore not from the view!
+
 	function atBindings (view, options) {
 		var listeners;
 
 		return {
 			observe: function (observer) {
-				if (!listeners) listeners = createListeners(view.bindings);
+				if (!listeners) listeners = createListeners(view.bindingsAreNotExposedWAT);
 				listeners.forEach(function (listener) { listener.add(observer); });
 			},
 			unobserve: function (observer) {
