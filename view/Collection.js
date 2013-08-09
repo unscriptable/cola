@@ -88,6 +88,18 @@ define(function (require) {
 					bindings.insert({ model: model });
 				}, null, iterator(iterable));
 			},
+			get: function (findable) {
+				var binding;
+				// first try to find it as a node or event
+				// next, try finding it as a model
+				binding = find(findable) || bindings.find(findable);
+				if (binding) {
+					binding.pull(function (key, value) {
+						proxy.set(binding.model, key, value);
+					});
+					return binding.model;
+				}
+			},
 			update: function (changes) {
 				// changes is an array of objects: { type, object, name [, oldValue] }
 				// type can be "new", "deleted", "updated", or "reconfigured"
@@ -154,7 +166,7 @@ define(function (require) {
 		binding = null;
 
 		// if this node isn't in our tree, bail early
-		if (!dom.contains(root, node)) return null;
+		if (!node || !dom.contains(root, node)) return null;
 
 		// for each model binding, compare node position.
 		// the cost of not using attribute turds is that we must loop
