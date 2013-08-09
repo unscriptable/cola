@@ -50,7 +50,7 @@ define(function (require) {
 
 		clear: function () {
 			var items = this.items;
-			while (items.length >= 0) {
+			while (items.length > 0) {
 				this.remove(items[0]);
 			}
 		},
