@@ -21,7 +21,7 @@ define(function (require) {
 	 */
 	function Single (root, options) {
 		var proxy, binder,
-			binding;
+			binding, accessors;
 
 		proxy = options.proxy || new ObjectMetadata().model;
 
@@ -35,29 +35,35 @@ define(function (require) {
 
 		return {
 			set: function (model, metadata) {
-				var accessors;
 
 				this.clear();
 
+				binding.model = model;
+
 				if (metadata) {
 					proxy = metadata.model;
+					delete binding.proxy;
 				}
 
-				binding.model = model;
-				accessors = binder(binding.node);
-				binding.push = accessors.push;
-				binding.pull = accessors.pull;
-				binding.push(function (key) {
-					return proxy.get(binding.model, key);
-				});
+				if (!accessors) {
+					accessors = binder(binding.node);
+				}
+
+				if (!binding.proxy) {
+					binding.proxy = createProxyForBinding(binding, proxy);
+					binding.push = function () {
+						accessors.push(binding.proxy);
+					};
+					binding.pull = function () {
+						accessors.pull(binding.proxy);
+					};
+				}
+
+				binding.push();
 			},
 			get: function (thing) {
 				// TODO: only return if `thing` is for this view
-				if (binding.pull) {
-					binding.pull(function (key, value) {
-						proxy.set(binding.model, key, value);
-					});
-				}
+				if (binding.pull) binding.pull();
 				return binding.model;
 			},
 			find: function (nodeOrEvent) {
@@ -68,17 +74,21 @@ define(function (require) {
 			},
 			clear: function () {
 				binding.model = null;
-				if (binding.push) {
-					binding.push(function (key) {
-						return proxy.get(binding.model, key);
-					});
-				}
+				if (binding.push) binding.push();
 			}
 		};
 
 	}
 
 	return Single;
+
+	function createProxyForBinding (binding, proxy) {
+		return {
+			get: function (key) { return proxy.get(binding.model, key); },
+			set: function (key, val) { return proxy.get(binding.model, key, val); },
+			has: function (key) { return proxy.has(binding.model, key); }
+		};
+	}
 
 	function contains (root, nodeOrEvent) {
 		var node = dom.toNode(nodeOrEvent);

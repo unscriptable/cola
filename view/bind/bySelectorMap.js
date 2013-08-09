@@ -22,7 +22,7 @@ define(function (require) {
 
 			nodeAttrs.forEach(function (binding) {
 				binding.bind.forEach(function (mapping) {
-					var prop, accessor;
+					var accessor;
 					accessor = nodeAccessor(binding.node, mapping[0], mapping[1]);
 					if (accessor.set) setters.push(accessor.set);
 					if (accessor.get) getters.push(accessor.get);
@@ -30,11 +30,11 @@ define(function (require) {
 			});
 
 			return {
-				push: function (provider) {
-					for (var i = 0; i < setters.length; i++) setters[i](provider);
+				push: function (proxy) {
+					setters.forEach(function (setter) { setter(proxy) });
 				},
-				pull: function (receiver) {
-					for (var i = 0; i < getters.length; i++) getters[i](receiver);
+				pull: function (proxy) {
+					getters.forEach(function (getter) { getter(proxy); });
 				}
 			};
 		};

@@ -36,11 +36,11 @@ define(function (require) {
 			});
 
 			return {
-				push: function (provider) {
-					setters.forEach(function (setter) { setter(provider) });
+				push: function (proxy) {
+					setters.forEach(function (setter) { setter(proxy) });
 				},
-				pull: function (receiver) {
-					getters.forEach(function (getter) { getter(receiver); });
+				pull: function (proxy) {
+					getters.forEach(function (getter) { getter(proxy); });
 				}
 			};
 		}

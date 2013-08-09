@@ -34,9 +34,9 @@ define(function (require) {
 
 	function createTemplateUpdater (node, attr, compiled) {
 		var setter = createSetter(node, attr);
-		return function (provider) {
-			var content = simpleTemplate.exec(compiled, provider);
-			setter(function () { return content; });
+		return function (proxy) {
+			var content = simpleTemplate.exec(compiled, proxy.get.bind(proxy));
+			setter({ get: function () { return content; } });
 		};
 	}
 
@@ -45,12 +45,12 @@ define(function (require) {
 		if ('text' == attr) attr = 'data';
 		else if ('html' == attr) attr = 'innerHTML';
 		return attr in node
-			? function (provider) {
-				var newVal = provider(key), oldVal = node[attr];
+			? function (proxy) {
+				var newVal = proxy.get(key), oldVal = node[attr];
 				if (newVal != oldVal) node[attr] = newVal;
 			}
-			: function (provider) {
-				var newVal = provider(key), oldVal = node.getAttribute(attr);
+			: function (proxy) {
+				var newVal = proxy.get(key), oldVal = node.getAttribute(attr);
 				if (newVal != oldVal) node.setAttribute(attr, newVal);
 			}
 	}
@@ -60,13 +60,13 @@ define(function (require) {
 		if ('text' == attr) attr = 'data';
 		else if ('html' == attr) attr = 'innerHTML';
 		return attr in node
-			? function (receiver) { receiver(key, node[attr]); }
-			: function (receiver) { receiver(key, node.getAttribute(attr)); }
+			? function (proxy) { proxy.set(key, node[attr]); }
+			: function (proxy) { proxy.set(key, node.getAttribute(attr)); }
 	}
 
 	function createEmptySetter (node, key) {
-		return function (provider) {
-			if (provider(key)) {
+		return function (proxy) {
+			if (proxy.get(key)) {
 				node.setAttribute(key, key);
 			}
 			else {
@@ -76,9 +76,9 @@ define(function (require) {
 	}
 
 	function createEmptyGetter (node, key) {
-		return function (receiver) {
+		return function (proxy) {
 			// Note: there may be IE6-8 issues lurking here:
-			receiver(key, node.hasAttribute(key));
+			proxy.set(key, node.hasAttribute(key));
 		};
 	}
 

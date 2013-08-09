@@ -53,19 +53,20 @@ define(function (require) {
 			binding.node = nodes.create();
 			nodes.insert(binding.node, inserted.pos);
 			accessors = binder(binding.node);
-			binding.push = accessors.push;
-			binding.pull = accessors.pull;
-			binding.push(function (key) {
-				return proxy.get(binding.model, key);
-			});
+			binding.proxy = createProxyForBinding(binding, proxy);
+			binding.push = function () {
+				accessors.push(binding.proxy);
+			};
+			binding.pull = function () {
+				accessors.pull(binding.proxy);
+			};
+			binding.push();
 		});
 
 		after(bindings, 'update', function (updated) {
 			var binding = updated.binding;
 			if (updated.pos >= 0) nodes.insert(binding.node, updated.pos);
-			binding.push(function (key) {
-				return proxy.get(binding.model, key);
-			});
+			binding.push();
 		});
 
 		after(bindings, 'remove', function (removed) {
@@ -92,9 +93,7 @@ define(function (require) {
 			get: function (thing) {
 				var binding = findBinding(bindings, thing);
 				if (binding) {
-					binding.pull(function (key, value) {
-						proxy.set(binding.model, key, value);
-					});
+					binding.pull();
 					return binding.model;
 				}
 			},
@@ -174,6 +173,14 @@ define(function (require) {
 		return function (binding) {
 			return identify(binding.model);
 		}
+	}
+
+	function createProxyForBinding (binding, proxy) {
+		return {
+			get: function (key) { return proxy.get(binding.model, key); },
+			set: function (key, val) { return proxy.get(binding.model, key, val); },
+			has: function (key) { return proxy.has(binding.model, key); }
+		};
 	}
 
 	function simpleCompare (a, b) {
