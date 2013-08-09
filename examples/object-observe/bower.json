@@ -1,0 +1,10 @@
+{
+	"name": "object-observe",
+	"description": "simple Object.observe() example",
+	"version": "0.0.1",
+	"dependencies": {
+		"curl": "~0.7",
+		"when": "~2",
+		"meld": "~1"
+	}
+}
