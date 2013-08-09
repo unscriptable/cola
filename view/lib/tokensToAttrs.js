@@ -5,7 +5,7 @@ define(function (require) {
 	var jsonpath = require('./jsonpath');
 
 	var tokenRx, tagInRx, tagOutRx, attrInRx, attrOutRx,
-		parseBardHtmlRx;
+		parseColaHtmlRx;
 
 	tokenRx = '\\{\\{(#?)(/?)([^}]*)\\}\\}';
 	tagInRx = '<([_$a-zA-Z][_$a-zA-Z0-9]*)\\s*';
@@ -14,13 +14,13 @@ define(function (require) {
 	attrInRx = '([_$a-zA-Z][_$a-zA-Z0-9\\-]*)\\s*=\\s*["\']?';
 	attrOutRx = '(["\'])';
 
-	parseBardHtmlRx = new RegExp(
+	parseColaHtmlRx = new RegExp(
 		[tagInRx, attrInRx, tokenRx, attrOutRx, tagOutRx].join('|'),
 		'g'
 	);
 
 	/**
-	 * Converts {{}} or {{{}}} tokens to html tags with data-bard-bind attrs
+	 * Converts {{}} or {{{}}} tokens to html tags with data-cola-bind attrs
 	 * and data-bard-section attrs.
 	 * TODO: support {{{}}} (unescaped html) tokens
 	 * Converts keys to jsonpath by keeping track of the sections here.
@@ -30,13 +30,13 @@ define(function (require) {
 	 * @return {String}
 	 */
 	function tokensToAttrs (template, options) {
-		var end, paths, inTag, inAttr, hasBardAttr, bardAttrs;
+		var end, paths, inTag, inAttr, hasColaAttr, colaAttrs;
 
 		template = String(template);
 		end = 0;
 		paths = [];
 
-		return template.replace(parseBardHtmlRx, function (m, tagIn, attrIn, section, endSection, token, attrOut, tagOut, pos) {
+		return template.replace(parseColaHtmlRx, function (m, tagIn, attrIn, section, endSection, token, attrOut, tagOut, pos) {
 			var out;
 
 			if ('' === token) {
@@ -53,13 +53,13 @@ define(function (require) {
 				}
 				else if (attrOut) {
 					// grab any trailing attribute characters
-					if (hasBardAttr && pos > end) {
+					if (hasColaAttr && pos > end) {
 						collect(inAttr, template.slice(end, pos));
 					}
 					inAttr = false;
 				}
 				else if (token) {
-					hasBardAttr = true;
+					hasColaAttr = true;
 					// grab any leading attribute characters
 					if (pos > end) {
 						collect(inAttr, template.slice(end, pos));
@@ -76,8 +76,8 @@ define(function (require) {
 				}
 				else if (tagOut) {
 					inTag = false;
-					if (hasBardAttr) {
-						out = bardAttrsOutput(bardAttrs) + tagOut;
+					if (hasColaAttr) {
+						out = colaAttrsOutput(colaAttrs) + tagOut;
 					}
 				}
 				else if (attrIn) {
@@ -85,7 +85,7 @@ define(function (require) {
 				}
 				else if (token) {
 					// this is an empty attribute
-					hasBardAttr = true;
+					hasColaAttr = true;
 					collect('', token);
 					out = '';
 				}
@@ -93,20 +93,20 @@ define(function (require) {
 			else {
 				if (tagIn) {
 					inTag = tagIn;
-					bardAttrs = {};
-					hasBardAttr = false;
+					colaAttrs = {};
+					hasColaAttr = false;
 				}
 				else if (section) {
-					out = bardSectionOutput(token);
+					out = colaSectionOutput(token);
 					paths.push(token);
 				}
 				else if (endSection) {
-					out = bardEndSectionOutput(token);
+					out = colaEndSectionOutput(token);
 					paths.pop();
 				}
 				else if (token) {
 					// this is a text/html placeholder
-					out = bardTextNodeOutput(token);
+					out = colaTextNodeOutput(token);
 				}
 			}
 
@@ -115,8 +115,8 @@ define(function (require) {
 			return out != null ? out : m;
 
 			function collect (attr, snippet) {
-				if (!(attr in bardAttrs)) bardAttrs[attr] = [];
-				bardAttrs[attr].push(snippet);
+				if (!(attr in colaAttrs)) colaAttrs[attr] = [];
+				colaAttrs[attr].push(snippet);
 			}
 		});
 
@@ -124,10 +124,10 @@ define(function (require) {
 
 	return tokensToAttrs;
 
-	function bardAttrsOutput (attrs) {
+	function colaAttrsOutput (attrs) {
 		// collect attrs into a descriptor string
 		// data-bard-bind="attr1:template1;attr2:template2"
-		return ' data-bard-bind="' + Object.keys(attrs).map(function (attr) {
+		return ' data-cola-bind="' + Object.keys(attrs).map(function (attr) {
 			var template;
 			template = attrs[attr].join('');
 			// empty tokens have a special attribute
@@ -135,15 +135,15 @@ define(function (require) {
 		}).join(';') + '"';
 	}
 
-	function bardTextNodeOutput (token) {
-		return '<span data-bard-bind="text:' + token + '"></span>';
+	function colaTextNodeOutput (token) {
+		return '<span data-cola-bind="text:' + token + '"></span>';
 	}
 
-	function bardSectionOutput (name) {
-		return '<div data-bard-section="' + name + '">';
+	function colaSectionOutput (name) {
+		return '<div data-cola-section="' + name + '">';
 	}
 
-	function bardEndSectionOutput () {
+	function colaEndSectionOutput () {
 		return '</div>';
 	}
 

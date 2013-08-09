@@ -14,7 +14,7 @@ define(function (require) {
 	 * @param {String} options.bindAttr is the attribute on bound nodes.
 	 * @param {String} options.sectionAttr is the attribute on section nodes.
 	 * @param {Boolean} [options.preserve] should be set to truthy
-	 *   to leave the data-bard-bind attrs in the dom after processing
+	 *   to leave the data-cola-bind attrs in the dom after processing
 	 *   a node tree.
 	 * @param {Function} [options.qsa] is a query selector
 	 *   function like jQuery(selector) or dojo.query(selector).  If
@@ -55,25 +55,25 @@ define(function (require) {
 
 	}
 
-	// data-bard-bind="attr1:template1;attr2:template2"
-	// data-bard-section="name"
+	// data-cola-bind="attr1:template1;attr2:template2"
+	// data-cola-section="name"
 
 	function createBindings (options, node) {
-		var binding, bardDef, sectionDef, isTextNode;
+		var binding, bindDef, sectionDef, isTextNode;
 
 		binding = {};
-		bardDef = node.getAttribute(options.bindAttr);
+		bindDef = node.getAttribute(options.bindAttr);
 		sectionDef = node.getAttribute(options.sectionAttr);
 
 		if (sectionDef) {
 			binding.section = sectionDef;
 			binding.node = checkRedundantSection(node);
 		}
-		if (bardDef) {
-			binding.node = bardDef.indexOf('text:') >= 0
+		if (bindDef) {
+			binding.node = bindDef.indexOf('text:') >= 0
 				? replaceWithTextNode(node)
 				: node;
-			binding.bind = bardDef.split(';').map(splitPair);
+			binding.bind = bindDef.split(';').map(splitPair);
 		}
 		return binding;
 	}
@@ -101,8 +101,8 @@ define(function (require) {
 	/**
 	 * TODO: this feels hacky. we should fix this in the parse step, imho.
 	 *
-	 * Removes a data-bard-section node if it has no siblings.  It returns
-	 * the node's parent instead.  Rationale: a data-bard-section node
+	 * Removes a data-cola-section node if it has no siblings.  It returns
+	 * the node's parent instead.  Rationale: a data-cola-section node
 	 * as an only child probably means that the dev intended the parent
 	 * to be the section root, but there is no way to indicate that with
 	 * mustache-style template tags.

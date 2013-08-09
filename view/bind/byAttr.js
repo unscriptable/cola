@@ -4,8 +4,8 @@ define(function (require) {
 	var extractDomAttrs = require('../lib/attrExtractor');
 	var nodeAccessor = require('../lib/nodeAccessor');
 
-	var bindAttr = 'data-bard-bind';
-	var sectionAttr = 'data-bard-section';
+	var bindAttr = 'data-cola-bind';
+	var sectionAttr = 'data-cola-section';
 
 	return byAttr;
 
