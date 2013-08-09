@@ -18,19 +18,21 @@ curl.config(
 	}
 );
 
-curl(['cola/view/Collection', 'cola/view/Single', 'cola/view/bind/byAttr', 'cola/view/bind/bySelectorMap'], function (Collection, Single, byAttr, bySelectorMap) {
+curl(
+['cola/view/Collection', 'cola/view/Model', 'cola/view/observe/atForms', 'cola/view/bind/byAttr', 'cola/view/bind/bySelectorMap'],
+function (Collection, Model, observeAtForms, bindByAttr, bindBySelectorMap) {
 	var root, form, collectionView, formView, coders;
 
 	root = document.getElementById('list');
 	form = document.getElementById('edit');
 
 	collectionView = Collection(root, {
-		binder: byAttr({}),
+		binder: bindByAttr({}),
 		id: 'spid',
 		sortBy: 'lastname'
 	});
-	formView = Single(form, {
-		binder: bySelectorMap({
+	formView = Model(form, {
+		binder: bindBySelectorMap({
 			bindings: {
 				firstname: '.firstname',
 				lastname: '.lastname',
@@ -38,6 +40,21 @@ curl(['cola/view/Collection', 'cola/view/Single', 'cola/view/bind/byAttr', 'cola
 			}
 		})
 	});
+	formView = observeAtForms(formView, {
+		// simple on() implementation
+		on: function (node, event, listener, query) {
+			node.addEventListener(event, ifMatches, false);
+			return function () {
+				node.removeEventListener(event, ifMatches, false);
+			};
+			function ifMatches (e) {
+				var matches, el, i;
+				matches = query ? [].slice.apply(node.querySelectorAll(query)) : [node];
+				while (el = matches.pop()) if (el == node) return listener(e);
+			}
+		}
+	});
+	collectionView.set([]);
 
 	coders = [];
 	Object.observe(coders, collectionView.update);
@@ -90,15 +107,8 @@ curl(['cola/view/Collection', 'cola/view/Single', 'cola/view/bind/byAttr', 'cola
 		}
 	}, false);
 
-	// TODO: why aren't submit and reset form events firing?
-
-//	form.addEventListener('submit', function (e) {
-	form.addEventListener('click', function (e) {
-		if (e.target.type != 'submit') return;
-		e.preventDefault();
-		var coder = formView.find(e);
-		if (coder) {
-			var updated = formView.get(coder);
+	formView.observe(function (updated) {
+		if (updated) {
 			// this is unfortunately lame:
 			coders.some(function (coder, i) {
 				if (coder.spid == updated.spid) {
@@ -108,10 +118,9 @@ curl(['cola/view/Collection', 'cola/view/Single', 'cola/view/bind/byAttr', 'cola
 			});
 			formView.clear();
 		}
-	}, false);
+	});
 
 	form.addEventListener('reset', function (e) {
-		e.preventDefault();
 		formView.clear();
 	}, false);
 

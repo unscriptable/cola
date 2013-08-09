@@ -4,7 +4,7 @@ define(function (require) {
 	var meld = require('meld');
 	var dom = require('./lib/dom');
 	var findSection = require('./lib/findSection');
-	var nativeProxy = require('./proxy/native');
+	var ObjectMetadata = require('../data/metadata/ObjectMetadata');
 
 	/**
 	 * Binds a dom node to a single model.
@@ -23,7 +23,7 @@ define(function (require) {
 		var proxy, binder,
 			binding;
 
-		proxy = options.proxy || nativeProxy({ missing: blank });
+		proxy = options.proxy || new ObjectMetadata().model;
 
 		binder = options.binder;
 		if (!binder) throw new Error('Binder not optional.');
@@ -34,9 +34,15 @@ define(function (require) {
 		};
 
 		return {
-			set: function (model) {
+			set: function (model, metadata) {
 				var accessors;
+
 				this.clear();
+
+				if (metadata) {
+					proxy = metadata.model;
+				}
+
 				binding.model = model;
 				accessors = binder(binding.node);
 				binding.push = accessors.push;
@@ -45,7 +51,8 @@ define(function (require) {
 					return proxy.get(binding.model, key);
 				});
 			},
-			get: function () {
+			get: function (thing) {
+				// TODO: only return if `thing` is for this view
 				if (binding.pull) {
 					binding.pull(function (key, value) {
 						proxy.set(binding.model, key, value);

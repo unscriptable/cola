@@ -8,7 +8,7 @@ define(function (require) {
 	var iterator = require('../lib/iterator');
 	var dom = require('./lib/dom');
 	var findSection = require('./lib/findSection');
-	var nativeProxy = require('./proxy/native');
+	var ObjectMetadata = require('../data/metadata/ObjectMetadata');
 
 	/**
 	 * Binds a dom node to a collection of models.
@@ -16,8 +16,6 @@ define(function (require) {
 	 * @param {Object} options
 	 * @param {Object} options.binder
 	 * @param {Object} [options.proxy]
-	 * @param {Object} [options.identify]
-	 * @param {Object} [options.id]
 	 * @param {Object} [options.compare]
 	 * @param {Object} [options.sortBy]
 	 * @param {Object} [options.listNode]
@@ -27,27 +25,25 @@ define(function (require) {
 	 * @constructor
 	 */
 	function Collection (root, options) {
-		var proxy, identify, compare, binder,
+		var proxy, compare, binder,
 			listNode, nodes,
-			bindings, find, after;
+			bindings, after;
 
-		proxy = options.proxy || nativeProxy({ missing: blank });
-
-		identify = options.identify || identifyFromProp(options.id || 'id');
-
-		compare = options.compare
-			|| compareFromProp(options.sortBy || 'id', proxy);
-
+		proxy = options.proxy || new ObjectMetadata().model;
+		compare = options.compare || options.sortBy || 'id';
 		binder = options.binder;
 		if (!binder) throw new Error('Binder not optional.');
 
 		// if there are no sections, use the root node.
 		listNode = options.listNode || findSection(root, options) || root;
 
-		bindings = new Sorted(identifyModel, compareModels, 'binding');
-		nodes = new NodeCollection(listNode);
+		bindings = new Sorted(
+			createIdentifyModel(proxy.id),
+			createCompareModels(proxy.get, compare),
+			'binding'
+		);
 
-		find = findBinding.bind(null, bindings, nodes.root);
+		nodes = new NodeCollection(listNode);
 
 		after = meld.afterReturning;
 
@@ -78,17 +74,23 @@ define(function (require) {
 		});
 
 		return {
-			set: function (iterable) {
-				this.clear();
+			set: function (iterable, metadata) {
+
+				bindings.clear();
+
+				if (metadata) {
+					proxy = metadata.model;
+					bindings.identify = createIdentifyModel(proxy.id);
+					bindings.compare = createCompareModels(proxy.get, compare);
+				}
+
 				iterator.reduce(function (_, model) {
 					bindings.insert({ model: model });
 				}, null, iterator(iterable));
+
 			},
-			get: function (findable) {
-				var binding;
-				// first try to find it as a node or event
-				// next, try finding it as a model
-				binding = find(findable) || bindings.find(findable);
+			get: function (thing) {
+				var binding = findBinding(bindings, thing);
 				if (binding) {
 					binding.pull(function (key, value) {
 						proxy.set(binding.model, key, value);
@@ -127,12 +129,12 @@ define(function (require) {
 
 				}, this);
 			},
-			find: function (nodeOrEvent) {
-				var binding = find(nodeOrEvent);
+			find: function (thing) {
+				var binding = findBinding(bindings, thing);
 				return binding && binding.model;
 			},
-			findNode: function (nodeOrEvent) {
-				var binding = find(nodeOrEvent);
+			findNode: function (thing) {
+				var binding = findBinding(bindings, thing);
 				return binding && binding.node;
 			},
 			clear: function () {
@@ -140,48 +142,41 @@ define(function (require) {
 			}
 		};
 
-		function identifyModel (b) {
-			return identify(b.model);
-		}
-
-		function compareModels (b1, b2) {
-			return compare(b1.model, b2.model);
-		}
-
 	}
 
 	return Collection;
 
-	function findBinding (bindings, root, nodeOrEvent) {
-		var node, binding;
-
-		node = dom.toNode(nodeOrEvent);
-		binding = null;
-
-		// if this node isn't in our tree, bail early
-		if (!node || !dom.contains(root, node)) return null;
-
-		// for each model binding, compare node position.
-		// the cost of not using attribute turds is that we must loop
-		// through all possible nodes.
-		return bindings.find(function (b) {
-			if (dom.contains(b.node, node)) {
-				return binding = b;
-			}
-		});
+	function findBinding (bindings, thing) {
+		var node = dom.toNode(thing);
+		var predicate = node ? findByNode : findByModel;
+		return bindings.find(predicate);
+		function findByNode (binding) {
+			return binding.node == node || dom.contains(binding.node, node);
+		}
+		function findByModel (binding) {
+			return proxy.id(binding.model) == proxy.id(thing);
+		}
 	}
 
-	function identifyFromProp (prop) {
-		return function (obj) { return Object(obj)[prop]; };
+	function createCompareModels (getter, compare) {
+		if (typeof compare != 'function') {
+			var prop = String(compare);
+			compare = function (m1, m2) {
+				return simpleCompare(getter(m1, prop),getter(m2, prop));
+			};
+		}
+		return function (binding1, binding2) {
+			return compare(binding1.model, binding2.model);
+		}
 	}
 
-	function compareFromProp (prop, proxy) {
-		return function (a, b) {
-			return compare(proxy.get(Object(a), prop), proxy.get(Object(b), prop));
-		};
+	function createIdentifyModel (identify) {
+		return function (binding) {
+			return identify(binding.model);
+		}
 	}
 
-	function compare (a, b) {
+	function simpleCompare (a, b) {
 		return a < b ? -1 : a > b ? 1 : 0;
 	}
 
