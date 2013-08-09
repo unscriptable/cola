@@ -25,22 +25,30 @@ define(function (require) {
 
 		observations = [];
 
-		return {
-			observe: function (observer) {
-				var observation = saveObservation(observations, observer);
-				eventSelectors.forEach(function (es) {
-					var remove;
-					remove = on(view.rootNode, es.event, observer, es.selector);
-					observation.add(remove);
-				});
-			},
-			unobserve: function (observer) {
-				// scan for observer to get unobserve
-				var observation = removeObservation(observer);
-				if (observation) observation.unobserve();
-			}
+		view.observe = function (observer) {
+			var callback, observation;
+			callback = eventToModel(observer);
+			observation = saveObservation(observations, observer);
+			eventSelectors.forEach(function (es) {
+				var remove;
+				remove = on(view.rootNode, es.event, callback, es.selector);
+				observation.add(remove);
+			});
 		};
 
+		view.unobserve = function (observer) {
+			var observation = removeObservation(observer);
+			if (observation) observation.unobserve();
+		};
+
+		return view;
+
+		function eventToModel (callback) {
+			return function (e) {
+				var model = view.get(e);
+				if (model) callback(model, e);
+			}
+		}
 	}
 
 	return atRoot;
