@@ -28,7 +28,7 @@ define(function (require) {
 	 */
 	function Collection (root, options) {
 		var proxy, identify, compare, binder,
-			topSection, modelNode, nodeList,
+			listNode, nodeList,
 			bindings, find, after;
 
 		proxy = options.proxy || nativeProxy({ missing: blank });
@@ -42,14 +42,10 @@ define(function (require) {
 		if (!binder) throw new Error('Binder not optional.');
 
 		// if there are no sections, use the root node.
-		topSection = options.listNode || findSection(root, options) || root;
-
-		// yank out the contents from top section and use it as a template.
-		// TODO: support dom fragments
-		modelNode = topSection.removeChild(topSection.children[0]);
+		listNode = options.listNode || findSection(root, options) || root;
 
 		bindings = new Sorted(identifyModel, compareModels, 'binding');
-		nodeList = new NodeList(root, topSection, modelNode);
+		nodeList = new NodeList(root, listNode);
 
 		find = findBinding.bind(null, bindings, nodeList.root);
 
@@ -78,7 +74,7 @@ define(function (require) {
 
 		after(bindings, 'remove', function (removed) {
 			var binding = removed.binding;
-			if (removed.pos >= 0) nodeList.remove(binding.node);
+			if (removed.prevPos >= 0) nodeList.remove(binding.node);
 		});
 
 		return {

@@ -3,8 +3,10 @@ define(function (require) {
 
 	function NodeList (rootNode, listNode, itemNode) {
 		this.root = rootNode;
-		this.list = listNode;
-		this.item = itemNode;
+		this.list = removeComments(listNode);
+		// yank out the contents from top section and use it as a template.
+		// TODO: support dom fragments
+		this.item = itemNode || this.list.removeChild(this.list.children[0]);
 	}
 
 	NodeList.prototype = {
@@ -14,7 +16,6 @@ define(function (require) {
 		},
 
 		insert: function (itemNode, pos) {
-			// Note: this wil work in IE8 only if there are no comment nodes
 			this.list.insertBefore(itemNode, this.list.children[pos]);
 		},
 
@@ -24,6 +25,17 @@ define(function (require) {
 	};
 
 	return NodeList;
+
+	// IE6-8 will consider comments to be children, so we remove them.
+	function removeComments (node) {
+		var child = node.firstChild, next;
+		while (child) {
+			next = child.nextSibling;
+			if (child.nodeType == 8) node.removeChild(child);
+			child = next;
+		}
+		return node;
+	}
 
 });
 }(
