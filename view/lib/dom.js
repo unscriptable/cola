@@ -29,10 +29,11 @@ define(function () {
 		 * Test if nodeOrEvent is a node or an event.  If it's an event, it
 		 * returns the event's target. Otherwise, it returns the node.
 		 * @param {Node|Event} nodeOrEvent
-		 * @return {Node}
+		 * @return {Node|undefined}
 		 */
 		toNode: function (nodeOrEvent) {
 			var node;
+			if (!nodeOrEvent) return;
 			node = 'nodeName' in nodeOrEvent && 'nodeType' in nodeOrEvent
 				? nodeOrEvent
 				: nodeOrEvent.target || nodeOrEvent.srcElement;
