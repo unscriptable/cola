@@ -1,15 +1,14 @@
 (function (define) {
 define(function (require) {
 
-	function NodeList (rootNode, listNode, itemNode) {
-		this.root = rootNode;
+	function NodeCollection (listNode, itemNode) {
 		this.list = removeComments(listNode);
 		// yank out the contents from top section and use it as a template.
 		// TODO: support dom fragments
 		this.item = itemNode || this.list.removeChild(this.list.children[0]);
 	}
 
-	NodeList.prototype = {
+	NodeCollection.prototype = {
 
 		create: function () {
 			return this.item.cloneNode(true);
@@ -24,7 +23,7 @@ define(function (require) {
 		}
 	};
 
-	return NodeList;
+	return NodeCollection;
 
 	// IE6-8 will consider comments to be children, so we remove them.
 	function removeComments (node) {

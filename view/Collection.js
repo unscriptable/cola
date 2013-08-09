@@ -3,7 +3,7 @@
 define(function (require) {
 
 	var meld = require('meld');
-	var NodeList = require('./lib/NodeList');
+	var NodeCollection = require('./lib/NodeCollection');
 	var Sorted = require('./lib/Sorted');
 	var iterator = require('../lib/iterator');
 	var dom = require('./lib/dom');
@@ -28,7 +28,7 @@ define(function (require) {
 	 */
 	function Collection (root, options) {
 		var proxy, identify, compare, binder,
-			listNode, nodeList,
+			listNode, nodes,
 			bindings, find, after;
 
 		proxy = options.proxy || nativeProxy({ missing: blank });
@@ -45,17 +45,17 @@ define(function (require) {
 		listNode = options.listNode || findSection(root, options) || root;
 
 		bindings = new Sorted(identifyModel, compareModels, 'binding');
-		nodeList = new NodeList(root, listNode);
+		nodes = new NodeCollection(listNode);
 
-		find = findBinding.bind(null, bindings, nodeList.root);
+		find = findBinding.bind(null, bindings, nodes.root);
 
 		after = meld.afterReturning;
 
 		after(bindings, 'insert', function (inserted) {
 			var binding, accessors;
 			binding = inserted.binding;
-			binding.node = nodeList.create();
-			nodeList.insert(binding.node, inserted.pos);
+			binding.node = nodes.create();
+			nodes.insert(binding.node, inserted.pos);
 			accessors = binder(binding.node);
 			binding.push = accessors.push;
 			binding.pull = accessors.pull;
@@ -66,7 +66,7 @@ define(function (require) {
 
 		after(bindings, 'update', function (updated) {
 			var binding = updated.binding;
-			if (updated.pos >= 0) nodeList.insert(binding.node, updated.pos);
+			if (updated.pos >= 0) nodes.insert(binding.node, updated.pos);
 			binding.push(function (key) {
 				return proxy.get(binding.model, key);
 			});
@@ -74,7 +74,7 @@ define(function (require) {
 
 		after(bindings, 'remove', function (removed) {
 			var binding = removed.binding;
-			if (removed.prevPos >= 0) nodeList.remove(binding.node);
+			if (removed.prevPos >= 0) nodes.remove(binding.node);
 		});
 
 		return {
