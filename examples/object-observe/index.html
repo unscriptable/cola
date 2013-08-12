@@ -19,8 +19,8 @@ curl.config(
 );
 
 curl(
-['cola/view/Collection', 'cola/view/Model', 'cola/view/observe/atForms', 'cola/view/bind/byAttr', 'cola/view/bind/bySelectorMap'],
-function (Collection, Model, observeAtForms, bindByAttr, bindBySelectorMap) {
+['cola/view/Collection', 'cola/view/Model', 'cola/view/observe/atForms', 'cola/view/bind/byAttr', 'cola/view/bind/bySelectorMap', 'cola/data/metadata/ObjectMetadata'],
+function (Collection, Model, observeAtForms, bindByAttr, bindBySelectorMap, ObjectMetadata) {
 	var root, form, collectionView, formView, coders;
 
 	root = document.getElementById('list');
@@ -28,7 +28,6 @@ function (Collection, Model, observeAtForms, bindByAttr, bindBySelectorMap) {
 
 	collectionView = Collection(root, {
 		binder: bindByAttr({}),
-		id: 'spid',
 		sortBy: 'lastname'
 	});
 	formView = Model(form, {
@@ -43,18 +42,18 @@ function (Collection, Model, observeAtForms, bindByAttr, bindBySelectorMap) {
 	formView = observeAtForms(formView, {
 		// simple on() implementation
 		on: function (node, event, listener, query) {
-			node.addEventListener(event, ifMatches, false);
-			return function () {
-				node.removeEventListener(event, ifMatches, false);
-			};
-			function ifMatches (e) {
-				var matches, el, i;
-				matches = query ? [].slice.apply(node.querySelectorAll(query)) : [node];
-				while (el = matches.pop()) if (el == node) return listener(e);
-			}
+//			node.addEventListener(event, ifMatches, false);
+//			return function () {
+//				node.removeEventListener(event, ifMatches, false);
+//			};
+//			function ifMatches (e) {
+//				var matches, el, i;
+//				matches = query ? [].slice.apply(node.querySelectorAll(query)) : [node];
+//				while (el = matches.pop()) if (el == node) return listener(e);
+//			}
 		}
 	});
-	collectionView.set([]);
+	collectionView.set([], new ObjectMetadata('spid'));
 
 	coders = [];
 	Object.observe(coders, collectionView.update);
