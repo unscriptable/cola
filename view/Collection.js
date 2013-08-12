@@ -161,7 +161,7 @@ define(function (require) {
 		if (typeof compare != 'function') {
 			var prop = String(compare);
 			compare = function (m1, m2) {
-				return simpleCompare(getter(m1, prop),getter(m2, prop));
+				return simpleCompare(getter(m1, prop), getter(m2, prop));
 			};
 		}
 		return function (binding1, binding2) {

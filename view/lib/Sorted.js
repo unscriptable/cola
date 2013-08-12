@@ -77,7 +77,7 @@ define(function (require) {
 			return search.binary(
 				0,
 				items.length,
-				function (pos) { return compare(items[pos], item); }
+				function (pos) { return compare(item, items[pos]); }
 			);
 		},
 
@@ -92,8 +92,8 @@ define(function (require) {
 				approx,
 				0,
 				items.length,
-				function (pos) { return identify(items[pos]) === id; },
-				function (pos) { return compare(items[pos], item); }
+				function (pos) { return id === identify(items[pos]); },
+				function (pos) { return compare(item, items[pos]); }
 			);
 		},
 
